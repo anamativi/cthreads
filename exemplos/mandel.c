@@ -1,104 +1,28 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
-#include "cdata.h"
-#include "cthread.h"
+/* 
+ * 
+ * mandel.c: Este programa realiza o cálculo do fractal de mandelbrot usando
+ *           threads. O espaço de cálculo é dividido em 't' linhas onde 't'
+ *           é o número de threads usadas.
+ *
+ * usage:    mandel [+n size] [+c cr0 ci0 cr1 ci] [+t threads] [+l lim] [+p]
+ *           onde:
+ *                size=tamanho da imagem, (cr0,ci0) e (cr1, ci1) sãocoordenadas
+ *                da diagonal do plano de cálculo, t=nro de threads, lim=limite
+ *                de convergência e p=flag para geração da imagem.
+ *
+ * Saída: com a opção "-p" gera um arquivo denominado "mandel.ppm" que pode ser
+ *        visualizado com ferramentas graficas como eog (eyes of gnome).
+ *
+ * compilaçao: %gcc -o mandel mandel.c -lm -lcthread -Wall
+ *
+ */
 
+#include	"../include/support.h"
+#include	"../include/cthread.h"
+#include	<stdio.h>
+#include	<stdlib.h>
+#include 	<math.h>
 
-////////////////
-// TESTE BASE //
-////////////////
-
-/*
-
-int canContinue = 0;
-csem_t* globalSem;
-int contadorGlobal = 0;
-
-void Teste(void* _arg)
-{
-    int* val = (int*)_arg;
-    int i;
-
-    for(i=0; i<10; i++)
-    {
-        printf("Valor global eh: %d\n", RetornaContadorGlobal(*(int*)_arg));
-        cyield();
-    }
-
-    canContinue = 1;
-}
-
-int RetornaContadorGlobal(int _tid)
-{
-    int tid = _tid;
-    cwait(globalSem);
-
-    contadorGlobal++;
-    int valorARetornar = contadorGlobal-1;
-
-    cyield();
-
-    csignal(globalSem);
-
-    return valorARetornar;
-}
-
-int main()
-{
-    printf("Teste\n\n");
-
-    globalSem = (csem_t*)malloc(sizeof(csem_t));
-    csem_init(globalSem);
-
-    int val1 = 0;
-    int val2 = 1;
-
-    int pid1 = ccreate(&Teste, &val1);
-    int pid2 = ccreate(&Teste, &val2);
-
-    cjoin(pid2);
-    cjoin(pid1);
-
-    printf("Hello world!\n");
-    return 0;
-}
-*/
-
-///////////////
-// EXEMPLO 1 //
-///////////////
-
-void* func0(void *arg) {
-	printf("Eu sou a thread ID0 imprimindo %d\n", *((int *)arg));
-	return;
-}
-
-void* func1(void *arg) {
-	printf("Eu sou a thread ID1 imprimindo %d\n", *((int *)arg));
-}
-
-int main(int argc, char *argv[]) {
-
-	int	id0, id1;
-	int i;
-
-	id0 = ccreate(func0, (void *)&i);
-	//id1 = ccreate(func1, (void *)&i);
-
-	//printf("Eu sou a main após a criação de ID0 e ID1\n");
-
-	//cjoin(id0);
-	//cjoin(id1);
-
-	//printf("Eu sou a main voltando para terminar o programa\n");
-}
-
-///////////////
-// EXEMPLO 2 //
-///////////////
-
-/*
 struct work{
     double c0_r;
     double c0_i;
@@ -122,6 +46,7 @@ void*   mandel(void *arg) {
     int *plan;
 
 
+    /* Faz uma copia da regiao global para manter em memoria local */
 
     c0_r = ((struct work*)(arg))->c0_r;
     c0_i = ((struct work*)arg)->c0_i;
@@ -135,10 +60,12 @@ void*   mandel(void *arg) {
     plan = (int *)malloc( n/t * n * sizeof(int));
     ((struct work*)arg)->region = plan;
 
+    /* Escala para cada ponto, em cada direcao */
 
     dx = (c1_r - c0_r)/n;
     dy = (c0_i - c1_i)/n;
 
+    /* Definicao da regiao de trabalho. Divisao por linhas */
 
     yi = tid * n/t;
     yf = (tid+1) * n/t - 1;
@@ -206,8 +133,6 @@ int main(int argc, char **argv) {
          }
     }
 
-    print = 1;
-    t = 4;
 
     workload = (struct work *) malloc(t * sizeof(struct work));
     if (workload == NULL)
@@ -231,12 +156,18 @@ int main(int argc, char **argv) {
 
     for (i=0; i<t; i++) {
         workers[i] = ccreate(mandel, (void *)(&workload[i]));
-        if (workers[i] == -1)
+        if (workers[i] == -1) 
            error("ERRO: Problema na criacao de thread worker\n");
     }
 
-    for (i=0; i<t; i++)
+    for (i=0; i<t; i++) 
         cjoin(workers[i]);
+
+    /*
+     * Geração de um arquivo ppm com a figura do fractal. P3 é um número
+     * mágico, seguido pelo tamanho da mensagem, profundiade do pixel e um
+     * conjunto de valores RGB para cada pixel.
+     */
 
     if (print) {
        fp = fopen("mandel.ppm", "w");
@@ -255,58 +186,3 @@ int main(int argc, char **argv) {
     exit(0);
 }
 
-*/
-
-///////////////
-// EXEMPLO 3 //
-///////////////
-
-/*
-
-#define		MAX_SIZE	250
-#define		MAX_THR		10
-
-int vetor[MAX_SIZE];
-int  inc = 0;
-
-void *func(void *arg){
-
-   while ( inc < MAX_SIZE ) {
-       vetor[inc] = (int)arg;
-       inc++;
-       if ( (inc % 20) == 0 )
-           cyield();
-       else
-           continue;
-   }
-
-   return (NULL);
-}
-
-
-int main(int argc, char *argv[]) {
-    int i, pid[MAX_THR];
-
-
-    for (i = 0; i < MAX_THR; i++) {
-        pid[i] = ccreate(func, (void *)('A'+i));
-       if ( pid[i] == -1) {
-          printf("ERRO: criação de thread!\n");
-          exit(-1);
-       }
-     }
-
-    for (i = 0; i < MAX_THR; i++)
-         cjoin(pid[i]);
-
-    for (i = 0; i < MAX_SIZE; i++) {
-        if ( (i % 20) == 0 )
-           printf("\n");
-        printf("%c", (char)vetor[i]);
-    }
-
-    printf("\nConcluido vetor de letras...\n");
-    exit(0);
-}
-
-*/
