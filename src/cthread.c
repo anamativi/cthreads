@@ -67,9 +67,9 @@ int cyield(void)
     //SetContinuePoint(&s_CurrentThread->threadData.context);
 
     // Yield
-	nossaThread ->yield = TRUE;
+	nossaThread -> yield = TRUE;
     // Estado Apto
-   	nossaThread->data.state = 1;
+   	nossaThread -> data.state = 1;
     //Fila de Aptos 	
 	AppendFila2(*filaAble, nossaThread)
 
@@ -124,22 +124,22 @@ int cwait(csem_t *sem)
 	//SetContinuePoint(&s_CurrentThread->threadData.context);
 
     // Verifica se temos alguma thread ja acessando este semaforo
-    if(sem->count > 0)
+    if(sem -> count > 0)
     {
-        // Incrementa o contador
+        //Decrementa o contador
         sem->count--;
-
         // Retorna sem problemas
         return 0;
     }
-
-    // Adiciona a thread atual no semaforo em questao ja que este semaforo esta bloqueado
-    AppendFila2(sem->fila, nossathread);
+    
+    //Decrementa o contador mesmo que ja esteja menor que zero
+    sem->count--;
 
     //Coloca a thread no estado de bloqueado
-    nossathread->data.state = 3;
-
-
+    nossathread -> data.state = 3;
+    
+    // Adiciona a thread atual na fila do semaforo em questao ja que este semaforo esta bloqueado
+    AppendFila2(sem->fila, nossathread);
 
 
 
