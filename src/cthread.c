@@ -10,8 +10,8 @@
 
 // --- Variáveis Globais --- //
 
-PFILA2 *filaAble;
-PFILA2 *filaExec;
+Thread_t* activeThread; // Thread atual
+PFILA2 *filaAble; // Fila de aptos
 PFILA2 *filaBlocked;
 
 // --- Funções --- //
@@ -84,8 +84,27 @@ int cyield(void)
 
 int cjoin(int tid)
 {
-	
-	return 0;
+	//tid = identificador da thread cujo término está sendo aguardado
+	Thread_t* targetThread;
+
+	if(activeThread->data.tid == tid) // Thread ativa é a que está sendo aguardada
+	{
+		if(activeThread->data.state == 4) // Thread terminou de executar
+			return 0;
+
+		if(activeThread->thread_waiting == TRUE)
+			return -1; // Já tem alguma outra thread esperando pela atual, então retornamos um erro
+		else
+		{
+			activeThread->thread_waiting = TRUE; // Setamos o waiting para TRUE
+			return 0;
+
+		}
+
+
+	}
+
+	else return -1; // A thread em execução não tem o tid pesquisado
 }
 
 int csem_init(csem_t *sem, int count)

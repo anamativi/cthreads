@@ -31,7 +31,8 @@ typedef struct s_TCB {
 typedef struct s_Thread {
 	
 	TCB_t data;
-	BOOL yield;
+	BOOLEAN yield;
+	BOOLEAN thread_waiting;
 	
 } Thread_t;
 
