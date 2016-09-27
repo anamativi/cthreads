@@ -30,14 +30,15 @@ typedef struct s_TCB {
 
 typedef struct s_Thread {
 	
-	TCB_t data;
-
-	struct Thread_t* waitingThread;
+	TCB_t data;	// Informações da thread
 
 	BOOLEAN yield;
-	BOOLEAN has_thread_waiting;
-	BOOLEAN is_waiting;
+	BOOLEAN has_thread_waiting; // Tem alguma thread esperando pela nossa
+	BOOLEAN is_waiting;			// Esta thread está esperando por outra
 	
+	// A thread que está esperando pela nossa é a seguinte:
+	struct Thread_t* waitingThread; 
+
 } Thread_t;
 
 #endif

@@ -88,24 +88,38 @@ int cjoin(int tid)
 	//tid = identificador da thread cujo término está sendo aguardado
 	Thread_t* targetThread;
 
-	if(activeThread->data.tid == tid) // Thread ativa é a que está sendo aguardada
-	{
-		if(activeThread->data.state == 4) // Thread terminou de executar
-			return 0;
+	// Salva o contexto de execução atual
+	SetCheckpoint(&activeThread->data.context);
 
-		if(activeThread->has_thread_waiting == TRUE)
-			return -1; // Já tem alguma outra thread esperando pela atual, então retornamos um erro
-		else
-		{
-			activeThread->has_thread_waiting = TRUE; // Setamos o waiting para TRUE
-			return 0;
+	// Procura a thread-alvo na lista de aptos
+	targetThread = SearchThreadByTid(tid, filaAble);
 
-		}
+	if (targetThread == NULL)	// Não achou a thread na lista de aptos
+		targetThread = SearchThreadByTid(tid, filaBlocked); // Procura na lista de bloqueados	
+
+	if (targetThread == NULL)
+		return -1; // Thread não foi encontrada em nenhuma fila (não existe ou já terminou de executar)
 
 
-	}
+	// Testa se a thread-alvo terminou de executar 
+	if (targetThread->data.state == 4)
+		return 0;
 
-	else return -1; // A thread em execução não tem o tid pesquisado
+	// Testa se a thread-alvo está sendo esperada por outra
+	if (targetThread->has_thread_waiting == TRUE)
+		return -1; // Há outra thread esperando por ela -> erro!
+
+	// Todos os testes ok, adiciona a thread atual para a espera da thread alvo
+	targetThread->has_thread_waiting = TRUE; // Avisa a thread-alvo que há alguma thread esperando por ela 
+	targetThread->waitingThread = activeThread; // Aponta a thread esperando para a thread atual (em execução)
+	
+	activeThread->is_waiting = TRUE; // Agora estamos "oficialmente" esperando por uma thread
+	activeThread->data.state = 3; // Estado = bloqueada (3)
+
+    AppendFila2(filaBlocked, activeThread); // Coloca na fila de bloqueados
+
+    // Executa a próxima thread da lista de aptos!!!!!!!
+    //activeThread -> NovaThreadQueSeráExecutada
 }
 
 int csem_init(csem_t *sem, int count)
