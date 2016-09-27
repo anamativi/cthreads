@@ -73,6 +73,7 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila)
 
 ucontext* CreateContext(Function(func), void *arg, Function(endFunc))
 {
+	// Cria um contexto para a thread
 	ucontext newContext;
 	char contextStack[SIGSTKSZ];
 
@@ -98,6 +99,12 @@ ucontext* CreateContext(Function(func), void *arg, Function(endFunc))
 	makecontext(&newContext, (PiFunc)func, 1, arg);
 
 	return newContext;
+}
+
+void SetCheckpoint(ucontext_t* context)
+{
+	// Salva o contexto atual
+	getcontext(context);
 }
 
 

@@ -65,14 +65,14 @@ int ccreate (void* (*start)(void*), void *arg)
 int cyield(void)
 {
     // Salva um ponto de continuação para o contexto atual
-    //SetContinuePoint(&s_CurrentThread->threadData.context);
-
+	SetCheckpoint(&activeThread->data.context);
+    
     // Yield
-	nossaThread -> yield = TRUE;
+	activeThread->yield = TRUE;
     // Estado Apto
-   	nossaThread -> data.state = 1;
+   	activeThread->data.state = 1;
     //Fila de Aptos 	
-	AppendFila2(*filaAble, nossaThread)
+	AppendFila2(*filaAble, activeThread)
 
 
 	//Thread_t* &teste = *GetAtIteratorFila2(*filaExec);
@@ -122,7 +122,7 @@ int cwait(csem_t *sem)
 {
 	
 	// Salva um ponto de continuação para o contexto atual
-	//SetContinuePoint(&s_CurrentThread->threadData.context);
+	SetCheckpoint(&activeThread->data.context);
 
     // Verifica se temos alguma thread ja acessando este semaforo
     if(sem -> count > 0)
@@ -137,10 +137,10 @@ int cwait(csem_t *sem)
     sem->count--;
 
     //Coloca a thread no estado de bloqueado
-    nossathread -> data.state = 3;
+    activeThread->data.state = 3;
     
     // Adiciona a thread atual na fila do semaforo em questao ja que este semaforo esta bloqueado
-    AppendFila2(sem->fila, nossathread);
+    AppendFila2(sem->fila, activeThread);
 
 
 
