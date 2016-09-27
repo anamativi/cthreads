@@ -70,3 +70,41 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila)
 
 	return NULL; // A thread não foi encontrada, retorna NULL
 }
+
+ucontext* CreateContext(Function(func), void *arg, Function(endFunc))
+{
+	ucontext newContext;
+	char contextStack[SIGSTKSZ];
+
+	typedef void(*PiFunc)(); // Para evitar warnings
+
+	getcontext(&newContext); // Pega o contexto atual
+
+	newContext.uc_stack.ss_size = sizeof(contextStack);
+	newContext.uc_stack.ss_flags = 0;
+	newContext.uc_stack.ss_sp = contextStack;
+
+	// Seta os dados do novo contexto
+	if (func == endFunc)
+		newContext.uc_link = NULL;
+	else
+	{
+		ucontext_t auxContext = CreateNewContext(endFunc, NULL, NULL);
+        ucontext_t* aux = (ucontext_t*)malloc(sizeof(ucontext_t));
+        memcpy(aux, &auxContext, sizeof(ucontext_t));
+        newContext.uc_link = aux;
+	}
+
+	makecontext(&newContext, (PiFunc)func, 1, arg);
+
+	return newContext;
+}
+
+
+void FinishThread(Thread_t *activeThread, void *arg)
+{
+	if (activeThread->has_thread_waiting == TRUE)
+		activeThread->waitingThread->is_waiting = FALSE; // Libera a thread que está esperando, se há alguma
+
+	activeThread->data.state = 4;
+}

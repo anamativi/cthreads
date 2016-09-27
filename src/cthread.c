@@ -43,9 +43,10 @@ int ccreate (void* (*start)(void*), void *arg)
 		Thread_t* newThread = CreateNewThread(initStruct);
 
 		//Seta a nova thread para a thread atual
-		        // Cria um novo contexto
-       		//newThread->data.context = CreateNewContext(&ThreadFinished, NULL, &ThreadFinished);
+		activeThread = newThread;
 
+		// Cria um novo contexto
+		newThread->threadData.context = CreateContext(start, arg, &FinishThread);
 
 		//Marca a inicialização como pronta
 		initStruct = TRUE;
@@ -92,11 +93,11 @@ int cjoin(int tid)
 		if(activeThread->data.state == 4) // Thread terminou de executar
 			return 0;
 
-		if(activeThread->thread_waiting == TRUE)
+		if(activeThread->has_thread_waiting == TRUE)
 			return -1; // Já tem alguma outra thread esperando pela atual, então retornamos um erro
 		else
 		{
-			activeThread->thread_waiting = TRUE; // Setamos o waiting para TRUE
+			activeThread->has_thread_waiting = TRUE; // Setamos o waiting para TRUE
 			return 0;
 
 		}
@@ -157,20 +158,37 @@ int cwait(csem_t *sem)
 
 int csignal(csem_t *sem)
 {
-	
-	return 0;
+    // Incrementa o contador do semaforo
+    sem->count++;
+
+    // Verifica se existe threads esperando o recurso
+    if(sem->count <= 0)
+    {
+		FirstFila2(sem->fila);
+		Thread* thread = GetAtIteratorFila2(sem->fila);
+		DeleteAtIteratorFila2(sem->fila);
+		thread-> data.state = 1;
+		AppendFila2(*filaAble, thread);
+		return 0;
+    }
+ 	
+ 	else 
+ 	{
+  		return 0;
+  	}
 }
 
 int cidentify (char *name, int size)
 {
 	int i = 0;
-	char grupo[] = "Ana Mativi\nAthos Lagemann\nRicardo Sabedra";
+	char grupo[] = "Ana Mativi\nAthos Lagemann\nRicardo Sabedra\n";
 
 	if (size > sizeof(grupo))
 		return -1;
 
-	for (i = 0; i < size; i++)
-		name[i] = grupo[i];
+	memcpy(name, &grupo, size); // Copia a string
+
+	name[sizeof(grupo)+1] = '\0'; // Garante que há um \0 no final da string passada
 
 	return 0;
 }
