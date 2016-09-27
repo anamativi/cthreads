@@ -120,6 +120,7 @@ int cjoin(int tid)
 
     // Executa a próxima thread da lista de aptos!!!!!!!
     //activeThread -> NovaThreadQueSeráExecutada
+    return 0;
 }
 
 int csem_init(csem_t *sem, int count)

@@ -115,3 +115,54 @@ void FinishThread(Thread_t *activeThread, void *arg)
 
 	activeThread->data.state = 4;
 }
+
+int StartNextThread(PFILA2* filaAble)
+{
+	// Gera o ticket que será sorteado
+	int jackpot = Random2();
+
+	while (jackpot > 255)
+	{
+		jackpot = jackpot - 255; // Garante que jackpot <= 255
+	}
+
+	Thread_t* chosen_one; // Thread escolhida
+	Thread_t* current_thread; // Thread que estamos olhando no momento
+	Thread_t* last_thread; // Última thread da lista
+
+	int distance; // Distância que o ticket da thread atual está do ticket escolhido
+	int best_distance = 256; // Menor distância encontrada até o momento (inicia em um valor impossível, 256, de modo que é trocada logo na primeira iteração)
+
+	// Percorre a lista de aptos atrás do ticket mais próximo ao ticket sorteado
+	current_thread = FirstFila2(filaAble);
+	last_thread = LastFila2(filaAble);
+
+	if(current_thread == NULL)
+	{
+		return -1; // A lista está vazia, não há thread para escalonar [???????????????]
+	}
+
+	do
+	{
+		if(abs(jackpot - current_thread->data.ticket) < best_distance) // Compara a distância do ticket atual com a menor distância
+		{
+			chosen_one = current_thread;
+			best_distance = abs(jackpot - current_thread->data.ticket);
+		}
+
+		if(abs(jackpot - current_thread->data.ticket) == best_distance) // tickets estão à mesma distância
+		{
+			if(current_thread->data.tid < chosen_one->data.tid) // Thread de menor tid ganha a cpu
+				chosen_one = current_thread;
+			// Caso a thread escolhida tenha o menor tid, não há necessidade de fazer nada
+		}
+
+		current_thread = NextFila2(filaAble);
+
+	} while(current_thread->data.tid != last_thread->data.tid) // SERÁ QUE ELE ANALISA A ÚLTIMA THREAD????
+
+	// Manda a thread escolhida para a execução
+	activeThread = chosen_one;
+
+	return 0;
+}
