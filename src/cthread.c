@@ -20,7 +20,8 @@ int ccreate (void* (*start)(void*), void *arg)
 {
 	//Inicializa as estruturas (pela primeira vez apenas)
 	static BOOLEAN initStruct = FALSE;
-	
+	Thread_t* newThread = CreateNewThread(initStruct);
+
 	if (initStruct == FALSE)
 	{	
 		
@@ -29,10 +30,6 @@ int ccreate (void* (*start)(void*), void *arg)
 		//1. Aptos
 		filaAble = malloc(sizeof(PFILA2));
 		CreateFila2(*filaAble);
-
-		//2. Executando
-		filaExec = malloc(sizeof(PFILA2));
-		CreateFila2(*filaExec);
 		
 		//3. Bloqueados
 		filaBlocked = malloc(sizeof(PFILA2));
@@ -40,19 +37,19 @@ int ccreate (void* (*start)(void*), void *arg)
 		
 		//Cria a thread main (e salva seu contexto)
 		//Inicialização do TCB da thread main tid = 0
-		Thread_t* newThread = CreateNewThread(initStruct);
+		//Thread_t* newThread = CreateNewThread(initStruct);
 
 		//Seta a nova thread para a thread atual
 		activeThread = newThread;
 
 		// Cria um novo contexto
-		newThread->threadData.context = CreateContext(start, arg, &FinishThread);
+		newThread->data.context = CreateContext(start, (void (*)(void))arg, 0);
 
 		//Marca a inicialização como pronta
 		initStruct = TRUE;
 	}
+	newThread->data.context = CreateContext(start, (void (*)(void))arg, 0);
 	
-	Thread_t* newThread = CreateNewThread(initStruct);
 	
 	//Cria contexto 
 	
@@ -72,7 +69,7 @@ int cyield(void)
     // Estado Apto
    	activeThread->data.state = 1;
     //Fila de Aptos 	
-	AppendFila2(*filaAble, activeThread)
+	AppendFila2(*filaAble, activeThread);
 
 
 	//Thread_t* &teste = *GetAtIteratorFila2(*filaExec);
@@ -92,10 +89,10 @@ int cjoin(int tid)
 	SetCheckpoint(&activeThread->data.context);
 
 	// Procura a thread-alvo na lista de aptos
-	targetThread = SearchThreadByTid(tid, filaAble);
+	targetThread = SearchThreadByTid(tid, *filaAble);
 
 	if (targetThread == NULL)	// Não achou a thread na lista de aptos
-		targetThread = SearchThreadByTid(tid, filaBlocked); // Procura na lista de bloqueados	
+		targetThread = SearchThreadByTid(tid, *filaBlocked); // Procura na lista de bloqueados	
 
 	if (targetThread == NULL)
 		return -1; // Thread não foi encontrada em nenhuma fila (não existe ou já terminou de executar)
@@ -116,7 +113,7 @@ int cjoin(int tid)
 	activeThread->is_waiting = TRUE; // Agora estamos "oficialmente" esperando por uma thread
 	activeThread->data.state = 3; // Estado = bloqueada (3)
 
-    AppendFila2(filaBlocked, activeThread); // Coloca na fila de bloqueados
+    AppendFila2(*filaBlocked, activeThread); // Coloca na fila de bloqueados
 
     // Executa a próxima thread da lista de aptos!!!!!!!
     //activeThread -> NovaThreadQueSeráExecutada
@@ -180,7 +177,7 @@ int csignal(csem_t *sem)
     if(sem->count <= 0)
     {
 		FirstFila2(sem->fila);
-		Thread* thread = GetAtIteratorFila2(sem->fila);
+		Thread_t* thread = GetAtIteratorFila2(sem->fila);
 		DeleteAtIteratorFila2(sem->fila);
 		thread-> data.state = 1;
 		AppendFila2(*filaAble, thread);
@@ -195,7 +192,7 @@ int csignal(csem_t *sem)
 
 int cidentify (char *name, int size)
 {
-	int i = 0;
+	//int i = 0;
 	char grupo[] = "Ana Mativi\nAthos Lagemann\nRicardo Sabedra\n";
 
 	if (size > sizeof(grupo))

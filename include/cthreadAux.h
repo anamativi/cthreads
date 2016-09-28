@@ -3,6 +3,8 @@
 
 #include "cdata.h"
 #include "support.h"
+#include <ucontext.h>
+
 
 /*-------------------------------------------------------------------
 Função:	Pega o próximo tid
@@ -27,7 +29,7 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila);
 Função:	Cria o contexto da thread em questão
 Ret:	O contexto que foi criado
 -------------------------------------------------------------------*/
-ucontext* CreateContext(Function(func), void *arg, Function(endFunc));
+ucontext_t* CreateContext(Function(func), void *arg, Function(endFunc));
 
 /*-------------------------------------------------------------------
 Função:	Salva o contexto de execução atual

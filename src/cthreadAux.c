@@ -71,32 +71,32 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila)
 	return NULL; // A thread não foi encontrada, retorna NULL
 }
 
-ucontext* CreateContext(Function(func), void *arg, Function(endFunc))
+ucontext_t* CreateContext(Function(func), void *arg, Function(endFunc))
 {
 	// Cria um contexto para a thread
-	ucontext newContext;
+	ucontext_t newContext;
 	char contextStack[SIGSTKSZ];
 
 	typedef void(*PiFunc)(); // Para evitar warnings
 
-	getcontext(&newContext); // Pega o contexto atual
+	getcontext(newContext); // Pega o contexto atual
 
 	newContext.uc_stack.ss_size = sizeof(contextStack);
 	newContext.uc_stack.ss_flags = 0;
 	newContext.uc_stack.ss_sp = contextStack;
 
-	// Seta os dados do novo contexto
+	// Seta os dados do novo contextoS
 	if (func == endFunc)
 		newContext.uc_link = NULL;
 	else
 	{
-		ucontext_t auxContext = CreateNewContext(endFunc, NULL, NULL);
+	ucontext_t auxContext = CreateContext(endFunc, NULL, NULL);
         ucontext_t* aux = (ucontext_t*)malloc(sizeof(ucontext_t));
         memcpy(aux, &auxContext, sizeof(ucontext_t));
         newContext.uc_link = aux;
 	}
 
-	makecontext(&newContext, (PiFunc)func, 1, arg);
+	makecontext(newContext, (PiFunc)func, 1, arg);
 
 	return newContext;
 }

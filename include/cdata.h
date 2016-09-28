@@ -7,12 +7,15 @@
 #ifndef __cdata__
 #define __cdata__
 
+#include "ucontext.h"
+
 #define	PROCST_CRIACAO	0
 #define	PROCST_APTO	1
 #define	PROCST_EXEC	2
 #define	PROCST_BLOQ	3
 #define	PROCST_TERMINO	4
 
+#define Function(func) void*(*func)(void*)
 
 typedef int BOOLEAN;
 #define TRUE 1
@@ -37,7 +40,7 @@ typedef struct s_Thread {
 	BOOLEAN is_waiting;			// Esta thread está esperando por outra
 	
 	// A thread que está esperando pela nossa é a seguinte:
-	struct Thread_t* waitingThread; 
+	struct s_Thread* waitingThread; 
 
 } Thread_t;
 
