@@ -11,8 +11,8 @@
 // --- Variáveis Globais --- //
 
 Thread_t* activeThread; // Thread atual
-PFILA2 *filaAble; // Fila de aptos
-PFILA2 *filaBlocked;
+static FILA2 filaAble; // Fila de aptos
+static FILA2 filaBlocked; // Fila de bloqueados
 
 // --- Funções --- //
 
@@ -20,41 +20,41 @@ int ccreate (void* (*start)(void*), void *arg)
 {
 	//Inicializa as estruturas (pela primeira vez apenas)
 	static BOOLEAN initStruct = FALSE;
-	Thread_t* newThread = CreateNewThread(initStruct);
 
 	if (initStruct == FALSE)
 	{	
-		
+		printf("entrou (initStruct is false)\n");
 		//Inicializa as três filas:
 
 		//1. Aptos
-		filaAble = malloc(sizeof(PFILA2));
-		CreateFila2(*filaAble);
+		CreateFila2(&filaAble);
+		printf("filaAble criada com sucesso!\n");
 		
-		//3. Bloqueados
-		filaBlocked = malloc(sizeof(PFILA2));
-		CreateFila2(*filaBlocked);
+		//2. Bloqueados
+		CreateFila2(&filaBlocked);
+		printf("filaBlocked criada com sucesso!\n");
 		
 		//Cria a thread main (e salva seu contexto)
-		//Inicialização do TCB da thread main tid = 0
-		//Thread_t* newThread = CreateNewThread(initStruct);
-
-		//Seta a nova thread para a thread atual
-		activeThread = newThread;
+		Thread_t* mainThread = CreateNewThread(initStruct);
 
 		// Cria um novo contexto
-		newThread->data.context = CreateContext(start, (void (*)(void))arg, 0);
+		mainThread->data.context = *HandleContext();
+
+		mainThread->data.state = PROCST_EXEC;
+		activeThread = mainThread;
+		printf("criou a main!\n");
 
 		//Marca a inicialização como pronta
 		initStruct = TRUE;
 	}
-	newThread->data.context = CreateContext(start, (void (*)(void))arg, 0);
-	
-	
-	//Cria contexto 
+	Thread_t* newThread = CreateNewThread(initStruct);
+	newThread->data.context = *HandleContext();
+	printf("criou a thread\n");
 	
 	//Adiciona a nova thread na fila de aptos
-	AppendFila2(*filaAble, newThread);
+	if(!AppendFila2(&filaAble, newThread))
+		printf("colocou na fila de aptos (ok)\n");
+	else return -1;
 
 	return newThread->data.tid;
 }
@@ -69,7 +69,7 @@ int cyield(void)
     // Estado Apto
    	activeThread->data.state = 1;
     //Fila de Aptos 	
-	AppendFila2(*filaAble, activeThread);
+	AppendFila2(&filaAble, activeThread);
 
 
 	//Thread_t* &teste = *GetAtIteratorFila2(*filaExec);
@@ -77,26 +77,29 @@ int cyield(void)
 
     // Isso nunca deve ocorrer
     //return -1;
-	//return 0;
+	return 0;//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 int cjoin(int tid)
 {
+	printf("entrou na cjoin!\n");
 	//tid = identificador da thread cujo término está sendo aguardado
 	Thread_t* targetThread;
 
 	// Salva o contexto de execução atual
 	SetCheckpoint(&activeThread->data.context);
+	printf("[cjoin 91] checkpoint setado\n");
 
 	// Procura a thread-alvo na lista de aptos
-	targetThread = SearchThreadByTid(tid, *filaAble);
+	targetThread = SearchThreadByTid(tid, &filaAble);
 
 	if (targetThread == NULL)	// Não achou a thread na lista de aptos
-		targetThread = SearchThreadByTid(tid, *filaBlocked); // Procura na lista de bloqueados	
+		targetThread = SearchThreadByTid(tid, &filaBlocked); // Procura na lista de bloqueados	
 
 	if (targetThread == NULL)
 		return -1; // Thread não foi encontrada em nenhuma fila (não existe ou já terminou de executar)
 
+	printf("[cjoin 95] target found:\n\t TID wanted: %d\n\t TID found.: %d\n", tid, targetThread->data.tid);
 
 	// Testa se a thread-alvo terminou de executar 
 	if (targetThread->data.state == 4)
@@ -113,11 +116,12 @@ int cjoin(int tid)
 	activeThread->is_waiting = TRUE; // Agora estamos "oficialmente" esperando por uma thread
 	activeThread->data.state = 3; // Estado = bloqueada (3)
 
-    AppendFila2(*filaBlocked, activeThread); // Coloca na fila de bloqueados
+	AppendFila2(&filaBlocked, activeThread); // Coloca na fila de bloqueados
+	printf("[cjoin 120] Colocou a thread na lista de espera e chama StartNextThread.\n");
 
-    // Executa a próxima thread da lista de aptos!!!!!!!
-    //activeThread -> NovaThreadQueSeráExecutada
-    return 0;
+	// Executa a próxima thread da lista de aptos!!!!!!!
+	StartNextThread(activeThread, &filaAble);
+	return 0;
 }
 
 int csem_init(csem_t *sem, int count)
@@ -180,7 +184,7 @@ int csignal(csem_t *sem)
 		Thread_t* thread = GetAtIteratorFila2(sem->fila);
 		DeleteAtIteratorFila2(sem->fila);
 		thread-> data.state = 1;
-		AppendFila2(*filaAble, thread);
+		AppendFila2(&filaAble, thread);
 		return 0;
     }
  	

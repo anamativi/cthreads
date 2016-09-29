@@ -4,6 +4,7 @@
 #include "cdata.h"
 #include "support.h"
 #include <ucontext.h>
+#include <string.h>
 
 
 /*-------------------------------------------------------------------
@@ -29,7 +30,7 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila);
 Função:	Cria o contexto da thread em questão
 Ret:	O contexto que foi criado
 -------------------------------------------------------------------*/
-ucontext_t* CreateContext(Function(func), void *arg, Function(endFunc));
+ucontext_t* HandleContext();
 
 /*-------------------------------------------------------------------
 Função:	Salva o contexto de execução atual
@@ -46,6 +47,6 @@ Função:	Escalona a próxima thread para execução
 Ret:	== 0 se tudo ocorreu bem
 		!= 0 caso contrário
 -------------------------------------------------------------------*/
-void StartNextThread(PFILA2* filaAble);
+void StartNextThread(Thread_t *activeThread, PFILA2 filaAble);
 
 #endif
