@@ -61,6 +61,7 @@ int ccreate (void* (*start)(void*), void *arg)
 
 int cyield(void)
 {
+	printf("Entrou no cyield\n");
     // Salva um ponto de continuação para o contexto atual
 	SetCheckpoint(&activeThread->data.context);
     
@@ -74,10 +75,11 @@ int cyield(void)
 
 	//Thread_t* &teste = *GetAtIteratorFila2(*filaExec);
 
-
+	StartNextThread(activeThread, &filaAble);
     // Isso nunca deve ocorrer
     //return -1;
-	return 0;//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	printf("Saiu no cyield\n");
+	return 0;///////////////////////////////////////////////////////////
 }
 
 int cjoin(int tid)
@@ -115,6 +117,7 @@ int cjoin(int tid)
 	
 	activeThread->is_waiting = TRUE; // Agora estamos "oficialmente" esperando por uma thread
 	activeThread->data.state = 3; // Estado = bloqueada (3)
+	SetCheckpoint(&activeThread->data.context);
 
 	AppendFila2(&filaBlocked, activeThread); // Coloca na fila de bloqueados
 	printf("[cjoin 120] Colocou a thread na lista de espera e chama StartNextThread.\n");
@@ -126,17 +129,19 @@ int cjoin(int tid)
 
 int csem_init(csem_t *sem, int count)
 {
+	printf("Entrou no csem_init\n");
 	// Inicia o semaforo
 	sem->count = 1;
 	sem->fila = (FILA2*)malloc(sizeof(FILA2));
 	CreateFila2(sem->fila);
 
+	printf("Saiu do csem_init\n");
     return 0;
 }
 
 int cwait(csem_t *sem)
 {
-	
+	printf("Entrou no cwait\n");
 	// Salva um ponto de continuação para o contexto atual
 	SetCheckpoint(&activeThread->data.context);
 
@@ -168,12 +173,13 @@ int cwait(csem_t *sem)
 
     // Procura uma nova thread para ser executada (insere a atual novamente na lista de bloqueadas)
     //FindNextThread(s_ThreadBlockedList);
-
-    return 0;
+	printf("Saiu do cwait\n");
+	return 0;
 }
 
 int csignal(csem_t *sem)
 {
+	printf("Entrou no csignal\n");
     // Incrementa o contador do semaforo
     sem->count++;
 
@@ -185,11 +191,13 @@ int csignal(csem_t *sem)
 		DeleteAtIteratorFila2(sem->fila);
 		thread-> data.state = 1;
 		AppendFila2(&filaAble, thread);
+		printf("Saiu do cwait\n");
 		return 0;
     }
  	
  	else 
  	{
+		printf("Saiu do cwait\n");
   		return 0;
   	}
 }
