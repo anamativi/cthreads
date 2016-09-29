@@ -30,7 +30,7 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila);
 Função:	Cria o contexto da thread em questão
 Ret:	O contexto que foi criado
 -------------------------------------------------------------------*/
-ucontext_t* HandleContext();
+//ucontext_t* HandleContext();
 
 /*-------------------------------------------------------------------
 Função:	Salva o contexto de execução atual
@@ -47,6 +47,13 @@ Função:	Escalona a próxima thread para execução
 Ret:	== 0 se tudo ocorreu bem
 		!= 0 caso contrário
 -------------------------------------------------------------------*/
-void StartNextThread(Thread_t *activeThread, PFILA2 filaAble);
+//void StartNextThread(Thread_t *activeThread, PFILA2 filaAble);
+
+/*-------------------------------------------------------------------
+Função:	Deleta a thread na fila desejada
+Ret:	== 0 se tudo ocorreu bem
+		!= 0 caso contrário
+-------------------------------------------------------------------*/
+int DeleteFromFila(int tid, PFILA2 fila);
 
 #endif

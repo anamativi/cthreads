@@ -21,7 +21,7 @@ void *th(void *param) {
 }
 
 int main(int argc, char *argv[]) {
-	int delay=10000;
+	int delay=10;
 	char	name[256];
 	
 	cidentify (name, 255);
@@ -34,6 +34,8 @@ int main(int argc, char *argv[]) {
 	ccreate(th, (void *)1);
 	ccreate(th, (void *)2);
 	ccreate(th, (void *)3);
+
+	printf("vai para cyield\n");
 	while(--delay) {
 		cyield();
 	}
