@@ -206,7 +206,7 @@ int cwait(csem_t *sem)
 	// Adiciona a thread atual na fila do semaforo em questao ja que este semaforo esta bloqueado
 	AppendFila2(sem->fila, activeThread);
 
-	AppendFila2(filaBlocked, activeThread);
+	AppendFila2(&filaBlocked, activeThread);
 	
 	swapcontext(&activeThread->data.context, contextExe);
 
