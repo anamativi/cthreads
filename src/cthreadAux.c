@@ -20,7 +20,6 @@ Thread_t* CreateNewThread(BOOLEAN initStruct)
 	Thread_t* newThread = (Thread_t*)malloc(sizeof(Thread_t));
 	if (newThread == NULL)
 	{
-		printf("newThread = NULL - malloc error\n");
 		return (Thread_t *)-1;
 	}
 
@@ -59,9 +58,6 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila)
 	FirstFila2(fila);
 	Thread_t* aThread = (Thread_t*)GetAtIteratorFila2(fila);
 
-	LastFila2(fila);
-	Thread_t* lastThread = (Thread_t*)GetAtIteratorFila2(fila);
-
 	if (aThread == NULL)
 		return NULL; //Fila não existe / está vazia
 
@@ -69,16 +65,16 @@ Thread_t* SearchThreadByTid(int tid, PFILA2 fila)
 		return aThread; //Os tids correspondem, é a thread que estamos procurando
 
 
-	while (TRUE) // Percorre a fila atrás da thread
+	while (aThread != NULL) // Percorre a fila atrás da thread
 	{
-		NextFila2(fila);
-		aThread = (Thread_t*)GetAtIteratorFila2(fila);
 
 		if (aThread->data.tid == tid) // Achou a thread desejada, sai da função
 			return aThread;
 
-		if (aThread->data.tid == lastThread->data.tid) // Chegou na última thread da fila, sai do loop
+		if(NextFila2(fila))
 			break;
+
+		aThread = (Thread_t*)GetAtIteratorFila2(fila);
 	}
 
 	return NULL; // A thread não foi encontrada, retorna NULL

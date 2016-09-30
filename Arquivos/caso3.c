@@ -5,7 +5,7 @@
 		- th1: create(th2); join(th2)
 		- th2: COM cyield
 	Resultado de teste
-		- Gera toda a th2 e depois a th1
+		- Gera toda a th2 e depois a th1.
 */
 #include <stdio.h>
 #include "../include/support.h"

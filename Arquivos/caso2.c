@@ -4,7 +4,7 @@
 		- ccreate
 		- thread COM cyield
 	Resultado de teste
-		- Alterna entre as três huebr
+		- Alterna entre as três!
 */
 #include <stdio.h>
 #include "../include/support.h"

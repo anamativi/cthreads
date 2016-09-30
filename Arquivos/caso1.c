@@ -4,7 +4,7 @@
 		- ccreate
 		- thread sem cyield
 	Resultado de teste
-		- Roda apenas uma das threads
+		- Roda apenas uma das threads!!
 */
 #include <stdio.h>
 #include "../include/support.h"
@@ -17,7 +17,7 @@ void *th(void *param) {
 		printf ("%d",n);
 		--cont;
 	}
-	return NULL; //huebr br
+	return NULL;
 }
 
 int main(int argc, char *argv[]) {
