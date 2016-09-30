@@ -17,7 +17,7 @@ void *th(void *param) {
 		printf ("%d",n);
 		--cont;
 	}
-	return NULL; //huebr
+	return NULL; //huebr br
 }
 
 int main(int argc, char *argv[]) {

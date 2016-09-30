@@ -13,13 +13,14 @@ void dispatcher();
 ucontext_t* HandleContext();
 void StartNextThread();
 int criarContextoDispatcher();
+void Imprimelista();
+void terminarThread();
 
 // --- Variáveis Globais --- //
 
 Thread_t* activeThread = NULL; // Thread atual
 Thread_t* mainThread = NULL; // Thread main
 ucontext_t* contextoDispatcher = NULL;
-//ucontext_t* exit_context = NULL;
 static FILA2 filaAble; // Fila de aptos
 static FILA2 filaBlocked; // Fila de bloqueados
 
@@ -28,8 +29,8 @@ static FILA2 filaBlocked; // Fila de bloqueados
 int ccreate (void* (*start)(void*), void *arg)
 {
 	//Inicializa as estruturas (pela primeira vez apenas)
-	printf("Entrou na ccreate\n");
 	static BOOLEAN initStruct = FALSE;
+	static BOOLEAN finthread = FALSE;
 
 	if (initStruct == FALSE)
 	{	
@@ -47,7 +48,7 @@ int ccreate (void* (*start)(void*), void *arg)
 		if (mainThread == NULL)
 			return -1;
 		mainThread->data.state = PROCST_EXEC;
-		mainThread->data.tid = 0;
+		mainThread->data.tid = GetNewThreadTid();
 		mainThread->data.ticket = (Random2() % 256);
 
 		mainThread->yield = FALSE;
@@ -70,6 +71,26 @@ int ccreate (void* (*start)(void*), void *arg)
 	
 	//Thread_t* newThread = CreateNewThread(initStruct);
 	//newThread->data.context = *HandleContext();
+
+	ucontext_t* disableThread = (ucontext_t*) malloc(sizeof(ucontext_t));
+		if(disableThread == NULL)
+			return -1;
+
+	if (finthread == FALSE)
+	{	
+
+		disableThread->uc_link = NULL;
+		disableThread->uc_stack.ss_sp = (char*) malloc(SIGSTKSZ);
+		if(disableThread->uc_stack.ss_sp == NULL)
+			return -1;
+		
+		disableThread->uc_stack.ss_size = SIGSTKSZ;
+
+		getcontext(disableThread);
+		makecontext(disableThread, (void(*)(void)) terminarThread, 0, NULL);
+		finthread = TRUE;
+	}
+
 	Thread_t* newThread = malloc(sizeof(Thread_t));
 	if (newThread == NULL)
 		return -1;
@@ -83,7 +104,8 @@ int ccreate (void* (*start)(void*), void *arg)
 
 	getcontext(&newThread->data.context);
 
-	newThread->data.context.uc_link = NULL;
+	newThread->data.context.uc_link = disableThread;
+	//newThread->data.context.uc_link = NULL;
 	newThread->data.context.uc_stack.ss_sp = (char*) malloc(SIGSTKSZ);
 	if(newThread->data.context.uc_stack.ss_sp == NULL)
 		return -1;
@@ -92,11 +114,12 @@ int ccreate (void* (*start)(void*), void *arg)
 	makecontext(&newThread->data.context, (void(*))start, 1, arg);
 
 	//Adiciona a nova thread na fila de aptos
-	if(!AppendFila2(&filaAble, newThread))
-		printf("colocou na fila de aptos (ok)\n");
-	else return -1;
+	if(AppendFila2(&filaAble, newThread))
+		return -1;
 
-	printf("Saiu da ccreate com sucesso\n");
+	printf("FilaAble:\n");
+	Imprimelista(&filaAble);
+
 	return newThread->data.tid;
 }
 
@@ -121,9 +144,11 @@ int cyield(void)
 
 int cjoin(int tid)
 {
-	printf("entrou na cjoin!\n");
 	//tid = identificador da thread cujo término está sendo aguardado
 	Thread_t* targetThread;
+
+	printf("filaBlocked:\n");
+	Imprimelista(&filaBlocked);
 
 	// Salva o contexto de execução atual
 	SetCheckpoint(&activeThread->data.context);
@@ -155,7 +180,13 @@ int cjoin(int tid)
 	AppendFila2(&filaBlocked, activeThread); // Coloca na fila de bloqueados
 
 	// Executa a próxima thread da lista de aptos!!!!!!!
+
+	printf("1filaBlocked:\n");
+	Imprimelista(&filaBlocked);
 	swapcontext(&activeThread->data.context, contextoDispatcher);
+
+	printf("2filaBlocked:\n");
+	Imprimelista(&filaBlocked);
 	return 0;
 }
 
@@ -406,24 +437,38 @@ int criarContextoDispatcher()
     makecontext(contextoDispatcher, (void (*)(void)) dispatcher, 0, NULL);
     return 0;
 }
-/*
+
 void terminarThread(){
     
-    quemEspera* quemEspera = alguemEsperando(exeThread);
+    //quemEspera* quemEspera = alguemEsperando(exeThread);
+	Thread_t* waitingThread = activeThread->waitingThread;
     
-    if (quemEspera != NULL){
-        removerBloqueada(quemEspera->esperando);
-        DeleteAtIteratorFila2(&fila_esperando);
-        quemEspera->esperando->state = APTO;
-        if (quemEspera->esperando->tid == 0)
-            AppendFila2(&fila_aptos, mainThread);
-        else
-            AppendFila2(&fila_aptos, quemEspera->esperando);
-        
+    if (waitingThread != NULL)
+    {
+        //removerBloqueada(quemEspera->esperando);
+     	DeleteFromFila(waitingThread->data.tid, &filaBlocked);
+		waitingThread->data.state = PROCST_APTO;
+		if(waitingThread->data.tid == 0)
+			AppendFila2(&filaAble, mainThread);
+		else
+			AppendFila2(&filaAble, waitingThread);
     }
-    
-    //free(exeThread->context.uc_stack.ss_sp); // remove as threads
-    //free(exeThread); //Os frees causavam segmentation fault
-    exeThread = NULL;
-    dispatcher();   // Chama o dispatcher novamente
-}*/
+
+	activeThread = NULL;
+	//dispatcher();   // Chama o dispatcher novamente
+}
+
+void Imprimelista(PFILA2 fila)
+{
+	FirstFila2(fila);
+	Thread_t* aux = GetAtIteratorFila2(fila); 
+
+	while(aux != NULL)
+	{
+		printf("\t TID: %d \n", aux->data.tid);
+		NextFila2(fila);
+		aux = GetAtIteratorFila2(fila);
+	}
+
+}
+
